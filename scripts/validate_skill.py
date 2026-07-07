@@ -79,13 +79,21 @@ def main() -> int:
         "BEGIN PRIVATE KEY",
         "gho_",
         "sk-",
-        "/home/node/.openclaw",
-        "/root/.hermes/cache",
+        "PRIVATE_PROJECT_NAME_PLACEHOLDER_SHOULD_NOT_APPEAR",
     ]
     lowered = text.lower()
     for needle in forbidden:
         if needle.lower() in lowered:
             fail(f"forbidden/private pattern found: {needle}")
+
+    local_path_patterns = [
+        r"/home/[^\s/]+/[^\s]+",
+        r"/Users/[^\s/]+/[^\s]+",
+        r"C:\\\\Users\\\\[^\s\\\\]+",
+    ]
+    for pattern in local_path_patterns:
+        if re.search(pattern, text):
+            fail(f"possible local path pattern found: {pattern}")
 
     print(f"OK: {path} is a valid Hermes skill ({len(text)} bytes)")
     return 0
