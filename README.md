@@ -1,194 +1,140 @@
 # Hermes Loop Master
 
-**Hermes-native skill for systematic coding loops, real verification, clean handoffs, and safer AI-assisted software work.**
-
-[![Skill](https://img.shields.io/badge/Hermes-Skill-blue)](https://hermes-agent.nousresearch.com/docs)
-[![Agent Skills](https://img.shields.io/badge/Agent%20Skills-SKILL.md-green)](https://agentskills.io/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-
-Hermes Loop Master turns vague coding requests into a disciplined engineering loop:
-
-1. **Spec first** — define the contract before editing.
-2. **One slice** — make one smallest meaningful change.
-3. **Red → green verification** — prove the bug or requirement with real commands.
-4. **Adversarial review** — inspect the diff for fake-done shortcuts.
-5. **Clean handoff** — leave durable state for the next session.
-
-It is designed for **Hermes Agent**, but the workflow is plain Markdown + shell-friendly validation, so other coding agents and human teams can use it too.
-
-> Status: public, generic, contribution-friendly. No credentials, private project data, MCP servers, or external API keys are required.
-
----
-
-## Keywords / کلمات کلیدی
-
-**English:** Hermes Agent skill, AI coding agent, coding workflow, software engineering loop, test-driven development, TDD, red-green-refactor, verification harness, agent handoff, context management, long-running agents, code review checklist, regression tests, secret hygiene, scope control, production-safe coding, autonomous software agents, SKILL.md, Agent Skills.
-
-**فارسی:** اسکیل هرمس، ایجنت کدنویسی، کدنویسی سیستماتیک، تست واقعی، توسعه تست‌محور، حلقه کدنویسی، تحویل تمیز بین سشن‌ها، کنترل کانتکست، جلوگیری از Done الکی، بررسی دیف، امنیت سکرت‌ها، کنترل محدوده کار، دیباگ اصولی، ریفکتور امن، کدنویسی قابل اعتماد با هوش مصنوعی.
-
----
-
-## فارسی — این اسکیل دقیقاً چه کار می‌کند؟
-
-**Hermes Loop Master** برای وقتی است که نمی‌خواهید Agent فقط «کد تولید کند» و بعد با اعتمادبه‌نفس بگوید تمام شد. این اسکیل Agent را مجبور می‌کند قبل از کار، معیار Done را بنویسد؛ بعد فقط یک بخش کوچک را تغییر دهد؛ تست واقعی بگیرد؛ diff را بدبینانه بررسی کند؛ و آخر کار یک handoff تمیز برای ادامه کار بسازد.
-
-### ویژگی‌های اصلی
-
-| ویژگی | توضیح |
-|---|---|
-| **Spec-first** | قبل از تغییر کد، Goal، Done When، Non-goals، Never Touch و Stop If نوشته می‌شود. |
-| **One-slice work** | Agent فقط یک تکه قابل تست را انجام می‌دهد، نه چند کار قاطی. |
-| **Real verification** | خروجی واقعی تست/لینت/بیلد/اسموک ثبت می‌شود. خروجی ساختگی ممنوع. |
-| **Adversarial review** | diff برای Done الکی، تست ضعیف، scope creep، API خیالی و secret leak بررسی می‌شود. |
-| **Clean handoff** | فایل `HANDOFF.md` مشخص می‌کند چه تغییر کرده، چه تستی اجرا شده، ریسک چیست و قدم بعدی چیست. |
-| **Context budget** | وضعیت کار در فایل‌ها نگهداری می‌شود، نه فقط داخل چت؛ پس سشن بعدی هم می‌تواند ادامه بدهد. |
-| **Public-safe by design** | هیچ نیاز به credential، MCP خارجی، secret یا اطلاعات خصوصی ندارد. |
-
-### چه زمانی استفاده کنیم؟
-
-برای این موارد عالی است:
-
-- باگ واقعی که باید reproduce شود؛
-- فیچر چندمرحله‌ای؛
-- تغییرات حساس مثل auth، payment، migration یا user data؛
-- refactorهایی که احتمال scope creep دارند؛
-- PR و ریپوهای public؛
-- کارهایی که ممکن است چند session طول بکشد.
-
-برای typo یا تغییر خیلی کوچک، مسیر سبک‌تر **Tiny Change Path** داخل خود skill کافی است.
-
----
-
-## Why this exists
-
-Coding agents are good at producing code. They are less reliable at knowing when the work is truly done.
-
-Common failure modes:
-
-- solving a nearby problem instead of the requested one,
-- making several unrelated changes in one pass,
-- weakening tests to get green output,
-- declaring success after a build starts but before the feature works,
-- losing context across sessions,
-- committing generated files, secrets, local paths, or private notes.
-
-Hermes Loop Master gives the agent a compact operating system for coding tasks: durable task files, strict verification gates, and explicit stop rules.
-
----
-
-## Feature map
-
-| Capability | File / mechanism | What it prevents |
-|---|---|---|
-| Execution contract | `.hermes-loop/LOOP.md` | goal drift, vague Done criteria |
-| One-slice plan | `Plan` + `Active Slice` | multi-change spaghetti, context rot |
-| Evidence log | `Evidence Log` table | invented test output, premature success |
-| Diff review | `.hermes-loop/REVIEW.md` | fake-done shortcuts, weak tests, secret leaks |
-| Handoff | `.hermes-loop/HANDOFF.md` | lost context between sessions |
-| Harness score | `scripts/harness_check.py` | missing loop artifacts and incomplete verification |
-| Skill validation | `scripts/validate_skill.py` | malformed `SKILL.md`, unsafe public patterns |
-
----
-
-## What is inside
-
 ```text
-.
-├── SKILL.md                         # The Hermes skill
-├── templates/
-│   ├── LOOP.md                      # Task loop state file
-│   ├── FEATURES.json                # Optional feature ledger for long projects
-│   ├── HANDOFF.md                   # End-of-session handoff template
-│   └── REVIEW.md                    # Adversarial diff review checklist
-├── scripts/
-│   ├── validate_skill.py            # Validates SKILL.md metadata and structure
-│   └── harness_check.py             # Scores loop artifacts in a project
-├── examples/
-│   ├── good-loop/                   # Example project state that should pass
-│   └── bad-loop/                    # Example project state that should fail
-├── CONTRIBUTING.md
-├── SECURITY.md
-└── LICENSE
+╔════════════════════════════════════════════════════════════════════╗
+║  0101  SPEC  →  SLICE  →  VERIFY  →  REVIEW  →  HANDOFF  1010   ║
+║                                                                    ║
+║           _____   _____   _____       _______ _______              ║
+║    |     |     | |     | |_____]      |  |  | |_____|              ║
+║    |____ |_____| |_____| |            |  |  | |     |              ║
+║                                                                    ║
+║              M A T R I X   L O O P   F O R   H E R M E S          ║
+╚════════════════════════════════════════════════════════════════════╝
 ```
 
+**A Hermes-native skill for systematic coding loops, real verification, and clean agent handoffs.**
+
+[![Release](https://img.shields.io/github/v/release/s0heyl/hermes-loop-master?style=for-the-badge)](https://github.com/s0heyl/hermes-loop-master/releases)
+[![License](https://img.shields.io/github/license/s0heyl/hermes-loop-master?style=for-the-badge)](LICENSE)
+[![Stars](https://img.shields.io/github/stars/s0heyl/hermes-loop-master?style=for-the-badge)](https://github.com/s0heyl/hermes-loop-master/stargazers)
+[![Last Commit](https://img.shields.io/github/last-commit/s0heyl/hermes-loop-master?style=for-the-badge)](https://github.com/s0heyl/hermes-loop-master/commits/main)
+[![Hermes Agent](https://img.shields.io/badge/Hermes-Agent-7c3aed?style=for-the-badge)](https://hermes-agent.nousresearch.com/docs)
+[![Agent Skills](https://img.shields.io/badge/SKILL.md-Agent%20Skills-00c853?style=for-the-badge)](https://agentskills.io/)
+[![No API Keys](https://img.shields.io/badge/API%20Keys-Not%20Required-00bcd4?style=for-the-badge)](#safety)
+[![Verification](https://img.shields.io/badge/Verification-Real%20Commands-ff9800?style=for-the-badge)](#real-test-results)
+
 ---
 
-## Install for Hermes
+## 🇬🇧 English
 
-Clone the repository:
+### What is it?
+
+Hermes Loop Master is a **coding-agent discipline skill**. It stops an agent from jumping straight into code and calling work done too early.
+
+It forces a simple loop:
+
+```text
+SPEC → ONE SLICE → REAL TEST → ADVERSARIAL REVIEW → CLEAN HANDOFF
+```
+
+### Why use it?
+
+Use it when a coding task is:
+
+- 🐞 a real bug fix,
+- 🚀 a multi-step feature,
+- 🔐 security/auth/payment/data sensitive,
+- 🧹 a refactor with scope-creep risk,
+- 🌍 public/open-source work,
+- 🧠 likely to continue across multiple sessions.
+
+### Core features
+
+| Feature | What it does |
+|---|---|
+| 🧾 **Spec-first** | Writes Goal, Done When, Non-goals, Never Touch, Stop If before editing. |
+| ✂️ **One-slice work** | Implements only one small, testable change at a time. |
+| ✅ **Real verification** | Records actual test/lint/build/smoke command output. |
+| 🕵️ **Adversarial review** | Checks for fake-done patterns, weak tests, scope creep, and secret leaks. |
+| 🔁 **Clean handoff** | Creates resumable state for the next agent/session. |
+| 🧼 **Repo hygiene** | Catches generated files, local paths, and unsafe public artifacts. |
+
+### Install
 
 ```bash
 git clone https://github.com/s0heyl/hermes-loop-master.git
 cd hermes-loop-master
-```
-
-Install into your local Hermes skills directory:
-
-```bash
 ./install.sh
 ```
 
-Or copy manually:
-
-```bash
-mkdir -p ~/.hermes/skills/software-development
-cp -R hermes-loop-master ~/.hermes/skills/software-development/hermes-loop-master
-```
-
-Start a fresh Hermes session so skills are reloaded, then ask for it explicitly:
-
-```text
-Use Hermes Loop Master to implement this feature safely.
-Create LOOP.md, implement one slice, run real verification, update REVIEW.md and HANDOFF.md, then stop.
-```
-
----
-
-## Quick start in a project
-
-From your project root:
-
-```bash
-mkdir -p .hermes-loop
-cp /path/to/hermes-loop-master/templates/LOOP.md .hermes-loop/LOOP.md
-cp /path/to/hermes-loop-master/templates/HANDOFF.md .hermes-loop/HANDOFF.md
-cp /path/to/hermes-loop-master/templates/REVIEW.md .hermes-loop/REVIEW.md
-```
-
-Then ask Hermes:
+Then start a fresh Hermes session and ask:
 
 ```text
 Use Hermes Loop Master.
-Read .hermes-loop/LOOP.md, fill Goal and Done When, implement exactly one next step, run real verification, update REVIEW.md and HANDOFF.md, and stop.
+Create LOOP.md, implement one slice, run real verification,
+write REVIEW.md and HANDOFF.md, then stop.
 ```
 
-For larger projects, add `FEATURES.json` and let each session complete one entry at a time.
+### Project files
+
+```text
+.hermes-loop/
+├── LOOP.md      # Goal, Done When, plan, evidence log
+├── REVIEW.md    # Fake-done / secret / scope review
+└── HANDOFF.md   # What changed, evidence, risks, next step
+```
 
 ---
 
-## The loop contract
+## 🇮🇷 فارسی
 
-Every coding pass follows this contract:
+### این چیه؟
 
-| Phase | Required evidence |
+**Hermes Loop Master** یک اسکیل برای کدنویسی سیستماتیک با Hermes است. کاری می‌کند Agent قبل از کدنویسی، هدف و معیار Done را واضح کند، فقط یک بخش کوچک را تغییر دهد، تست واقعی بگیرد، diff را بدبینانه بررسی کند و در پایان handoff تمیز بنویسد.
+
+حلقه اصلی:
+
+```text
+مشخصات کار → یک تغییر کوچک → تست واقعی → بازبینی بدبینانه → تحویل تمیز
+```
+
+### کی استفاده کنیم؟
+
+برای این کارها عالی است:
+
+- 🐞 باگ واقعی که باید reproduce شود؛
+- 🚀 فیچر چندمرحله‌ای؛
+- 🔐 تغییرات حساس مثل auth، payment، data، migration؛
+- 🧹 refactorهایی که ممکن است از کنترل خارج شوند؛
+- 🌍 ریپوهای public یا PRهای قابل بررسی؛
+- 🧠 کارهایی که ممکن است چند session طول بکشند.
+
+### ویژگی‌ها
+
+| ویژگی | کاربرد |
 |---|---|
-| Orient | Current branch, dirty state, task file, relevant files read |
-| Specify | Goal, Done When, Non-goals, Never Touch, Stop If |
-| Plan | 3–7 concrete steps with exactly one active slice |
-| Act | Smallest implementation slice; no unrelated cleanup |
-| Verify | Real command output: tests, lint/typecheck/build, smoke check as applicable |
-| Review | Diff checked against fake-done patterns and secret leakage |
-| Handoff | Changed files, commands run, open risks, next recommended step |
+| 🧾 **Spec-first** | قبل از تغییر کد، Goal و Done When و Non-goals نوشته می‌شود. |
+| ✂️ **One-slice** | هر بار فقط یک تغییر کوچک و قابل تست انجام می‌شود. |
+| ✅ **تست واقعی** | خروجی واقعی تست/لینت/بیلد ثبت می‌شود؛ خروجی خیالی ممنوع. |
+| 🕵️ **Review بدبینانه** | Done الکی، تست ضعیف، scope creep و secret leak بررسی می‌شود. |
+| 🔁 **Handoff تمیز** | session بعدی بدون حدس‌زدن ادامه می‌دهد. |
+| 🧼 **بهداشت ریپو** | فایل generated، مسیر لوکال و چیزهای private کمتر وارد commit می‌شوند. |
+
+### پرامپت آماده
+
+```text
+با Hermes Loop Master این تسک را انجام بده.
+اول .hermes-loop/LOOP.md را کامل کن.
+فقط یک slice انجام بده.
+تست واقعی بگیر.
+REVIEW.md و HANDOFF.md را کامل کن و بعد متوقف شو.
+```
 
 ---
 
-## Real test result / نتیجه تست واقعی
+## 🧪 Real test results
 
-This repository includes fixture checks, and the skill was also tested on a small real Python bug-fix scenario.
-
-### Built-in fixture test
-
-Command:
+### Built-in fixture check
 
 ```bash
 python3 scripts/validate_skill.py SKILL.md
@@ -202,19 +148,16 @@ Observed result:
 OK: SKILL.md is a valid Hermes skill
 GOOD: Score: 28/28 (100%)
 BAD:  Score: 9/27 (33%)
-bad_issues=18
 ```
 
-Meaning:
-
-| Fixture | Score | Expected? | Why |
-|---|---:|---|---|
-| `examples/good-loop` | `28/28` | ✅ Pass | Has Done When, evidence, review checklist, handoff, and no secret hits. |
-| `examples/bad-loop` | `9/27` | ✅ Fail | Missing Non-goals, Never Touch, Stop If, evidence, review checklist, and handoff fields. |
+| Fixture | Result | Meaning |
+|---|---:|---|
+| ✅ `good-loop` | `28/28` | Complete loop: spec, evidence, review, handoff. |
+| ❌ `bad-loop` | `9/27` | Missing Non-goals, evidence, review checks, handoff fields. |
 
 ### Real bug-fix smoke test
 
-A small Python pricing helper initially accepted only exact uppercase coupon input:
+Buggy code accepted only exact coupon text:
 
 ```python
 def final_price(price, coupon=None):
@@ -223,26 +166,26 @@ def final_price(price, coupon=None):
     return price
 ```
 
-Expected behavior:
+Expected:
 
 ```python
 final_price(100, " save10 ") == 90
 ```
 
-The loop required a regression test first. Before the fix:
+Before fix:
 
 ```text
 1 failed, 2 passed
 AssertionError: assert 100 == 90
 ```
 
-After the one-slice implementation:
+After one-slice fix:
 
 ```python
 normalized_coupon = coupon.strip().upper() if isinstance(coupon, str) else coupon
 ```
 
-Verification passed:
+Final evidence:
 
 ```text
 3 passed in 0.09s
@@ -250,124 +193,64 @@ git diff --check → ok
 harness_check.py . → Score: 27/27 (100%)
 ```
 
-The loop also caught a real hygiene issue: generated `__pycache__` files had been accidentally tracked during setup. The final diff removed them from git and added `.gitignore`.
-
-**Practical signal:** the skill did not merely make the code pass; it forced proof, diff review, generated-file cleanup, and a resumable handoff.
+Bonus signal: the loop also caught accidentally tracked `__pycache__` files and cleaned them from git.
 
 ---
 
-## Example prompts
-
-### English
+## 📦 Repository contents
 
 ```text
-Use Hermes Loop Master for this bug fix.
-First write .hermes-loop/LOOP.md with Goal, Done When, Non-goals, Never Touch, and Stop If.
-Add a failing regression test, run it, implement one slice, run verification, write REVIEW.md and HANDOFF.md, then stop.
+.
+├── SKILL.md
+├── install.sh
+├── templates/
+│   ├── LOOP.md
+│   ├── REVIEW.md
+│   ├── HANDOFF.md
+│   └── FEATURES.json
+├── scripts/
+│   ├── validate_skill.py
+│   └── harness_check.py
+├── examples/
+│   ├── good-loop/
+│   └── bad-loop/
+├── CONTRIBUTING.md
+├── SECURITY.md
+└── LICENSE
 ```
 
-### فارسی
+---
 
-```text
-با Hermes Loop Master این باگ را درست کن.
-اول .hermes-loop/LOOP.md را با Goal، Done When، Non-goals، Never Touch و Stop If کامل کن.
-بعد یک تست قرمز اضافه کن، اجراش کن، فقط یک slice را fix کن، تست واقعی بگیر، REVIEW.md و HANDOFF.md را کامل کن و متوقف شو.
-```
+## 🔐 Safety
+
+Hermes Loop Master:
+
+- does **not** need API keys;
+- does **not** install MCP servers;
+- does **not** grant extra permissions;
+- does **not** replace CI, code review, or human judgment;
+- does **not** make destructive commands safe automatically.
+
+Keep public contributions generic: no private paths, customer data, credentials, private chat logs, or proprietary prompts.
 
 ---
 
-## Included checks
+## 🛠️ Roadmap
 
-Validate the skill file:
-
-```bash
-python3 scripts/validate_skill.py SKILL.md
-```
-
-Score a project's loop artifacts:
-
-```bash
-python3 scripts/harness_check.py examples/good-loop
-python3 scripts/harness_check.py examples/bad-loop
-```
-
-Expected behavior:
-
-- `good-loop` passes with a high score.
-- `bad-loop` fails and lists missing verification/handoff fields.
+- [ ] GitHub Actions CI for skill + fixture validation
+- [ ] Python / Node / Flutter / Go / Rust verification recipes
+- [ ] Better diff classifier for generated files and weakened tests
+- [ ] More real examples: API, UI state, authz negative test, migration dry run
+- [ ] Safer installer with `--dry-run`, `--force`, and `--target`
 
 ---
 
-## What this skill does not do
+## 🤝 Contributing
 
-- It does not grant extra permissions.
-- It does not install MCP servers.
-- It does not require external API keys.
-- It does not claim that prompts alone guarantee correctness.
-- It does not replace real tests, CI, code review, or human product judgment.
-- It does not make destructive git operations safe; force-push, reset, deletion, production deploys, and paid operations still need explicit approval.
+Contributions are welcome. Keep changes public-safe and evidence-backed.
 
----
+See [CONTRIBUTING.md](CONTRIBUTING.md).
 
-## Recommended use cases
-
-- production bug fixes,
-- multi-step features,
-- refactors with risk of scope creep,
-- agent handoffs across sessions,
-- security-sensitive changes,
-- public/open-source contributions where reviewability matters,
-- tasks where a future agent must be able to resume from files rather than chat history.
-
-For one-line edits, use judgment: the full loop may be heavier than necessary. The skill includes a lightweight path for tiny changes.
-
----
-
-## How it can get better
-
-Good next improvements for contributors:
-
-1. **Language-specific recipes** — Python, Node/TypeScript, Flutter, Go, Rust verification ladders.
-2. **CI workflow** — add GitHub Actions for `validate_skill.py` and fixture checks once maintainers have a token with workflow scope.
-3. **Open-source benchmark set** — run the skill on small public issues and collect pass/fail evidence.
-4. **Diff classifier** — detect generated-file noise, deleted assertions, and broad formatting churn more automatically.
-5. **Install UX** — add a safer installer with `--dry-run`, `--force`, and target path options.
-6. **More examples** — frontend UI state, API endpoint, authz negative test, migration dry run.
-7. **Human checklist mode** — concise printable checklist for teams that want the same loop without an agent.
-
-Contributions are welcome, especially examples with real command output and no private data.
-
----
-
-## Public safety principles
-
-This repository is intentionally generic:
-
-- no private project names,
-- no customer data,
-- no credentials,
-- no environment-specific paths,
-- no private operational notes,
-- no copied private prompts.
-
-Please keep contributions public-safe.
-
----
-
-## Roadmap
-
-- More language-specific verification recipes.
-- Optional GitHub Actions workflow once maintainers have appropriate token scopes.
-- More example fixtures.
-- A small installer that copies templates without overwriting existing files.
-- Benchmarks on real open-source tasks.
-
----
-
-## Contributing
-
-Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md).
-
-## License
+## 📄 License
 
 MIT — see [LICENSE](LICENSE).

@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.3.0 - 2026-07-07
+
+README redesign:
+
+- Reworked README into shorter, cleaner English and Persian sections.
+- Added cyberpunk/matrix loop ASCII banner.
+- Expanded badge set for release, license, stars, last commit, Hermes, Agent Skills, no API keys, and real verification.
+- Simplified feature tables, install instructions, safety notes, and roadmap.
+- Kept real test evidence with concise examples.
+
 ## 1.2.0 - 2026-07-07
 
 Repository rename and branding update:
