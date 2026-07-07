@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Install Hermes Loop Mastering into the current user's Hermes skills directory.
+# Install Hermes Loop Master into the current user's Hermes skills directory.
 set -euo pipefail
 
 SRC_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DEST_BASE="${HERMES_HOME:-$HOME/.hermes}/skills/software-development"
-DEST="$DEST_BASE/hermes-loop-mastering"
+DEST="$DEST_BASE/hermes-loop-master"
 FORCE="${FORCE:-0}"
 
 if [ -e "$DEST" ] && [ "$FORCE" != "1" ]; then
@@ -21,5 +21,5 @@ fi
 mkdir -p "$DEST"
 cp -R "$SRC_DIR"/SKILL.md "$SRC_DIR"/templates "$SRC_DIR"/scripts "$SRC_DIR"/examples "$DEST"/
 
-echo "Installed Hermes Loop Mastering to: $DEST"
+echo "Installed Hermes Loop Master to: $DEST"
 echo "Start a fresh Hermes session before loading the skill."

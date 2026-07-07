@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for helping improve Hermes Loop Mastering.
+Thanks for helping improve Hermes Loop Master.
 
 ## Contribution rules
 

@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.2.0 - 2026-07-07
+
+Repository rename and branding update:
+
+- Renamed public repository to `hermes-loop-master`.
+- Updated public title to **Hermes Loop Master**.
+- Updated install paths, README links, scripts, and skill metadata.
+- Kept the workflow and validation behavior unchanged.
+
 ## 1.1.0 - 2026-07-07
 
 Documentation upgrade:

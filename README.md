@@ -1,12 +1,12 @@
-# Hermes Loop Mastering
+# Hermes Loop Master
 
-**Hermes-native skill for systematic coding agents, real verification, clean handoffs, and safer long-running software work.**
+**Hermes-native skill for systematic coding loops, real verification, clean handoffs, and safer AI-assisted software work.**
 
 [![Skill](https://img.shields.io/badge/Hermes-Skill-blue)](https://hermes-agent.nousresearch.com/docs)
 [![Agent Skills](https://img.shields.io/badge/Agent%20Skills-SKILL.md-green)](https://agentskills.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-Hermes Loop Mastering turns vague coding requests into a disciplined engineering loop:
+Hermes Loop Master turns vague coding requests into a disciplined engineering loop:
 
 1. **Spec first** — define the contract before editing.
 2. **One slice** — make one smallest meaningful change.
@@ -30,7 +30,7 @@ It is designed for **Hermes Agent**, but the workflow is plain Markdown + shell-
 
 ## فارسی — این اسکیل دقیقاً چه کار می‌کند؟
 
-**Hermes Loop Mastering** برای وقتی است که نمی‌خواهید Agent فقط «کد تولید کند» و بعد با اعتمادبه‌نفس بگوید تمام شد. این اسکیل Agent را مجبور می‌کند قبل از کار، معیار Done را بنویسد؛ بعد فقط یک بخش کوچک را تغییر دهد؛ تست واقعی بگیرد؛ diff را بدبینانه بررسی کند؛ و آخر کار یک handoff تمیز برای ادامه کار بسازد.
+**Hermes Loop Master** برای وقتی است که نمی‌خواهید Agent فقط «کد تولید کند» و بعد با اعتمادبه‌نفس بگوید تمام شد. این اسکیل Agent را مجبور می‌کند قبل از کار، معیار Done را بنویسد؛ بعد فقط یک بخش کوچک را تغییر دهد؛ تست واقعی بگیرد؛ diff را بدبینانه بررسی کند؛ و آخر کار یک handoff تمیز برای ادامه کار بسازد.
 
 ### ویژگی‌های اصلی
 
@@ -72,7 +72,7 @@ Common failure modes:
 - losing context across sessions,
 - committing generated files, secrets, local paths, or private notes.
 
-Hermes Loop Mastering gives the agent a compact operating system for coding tasks: durable task files, strict verification gates, and explicit stop rules.
+Hermes Loop Master gives the agent a compact operating system for coding tasks: durable task files, strict verification gates, and explicit stop rules.
 
 ---
 
@@ -118,8 +118,8 @@ Hermes Loop Mastering gives the agent a compact operating system for coding task
 Clone the repository:
 
 ```bash
-git clone https://github.com/s0heyl/hermes-loop-mastering.git
-cd hermes-loop-mastering
+git clone https://github.com/s0heyl/hermes-loop-master.git
+cd hermes-loop-master
 ```
 
 Install into your local Hermes skills directory:
@@ -132,13 +132,13 @@ Or copy manually:
 
 ```bash
 mkdir -p ~/.hermes/skills/software-development
-cp -R hermes-loop-mastering ~/.hermes/skills/software-development/hermes-loop-mastering
+cp -R hermes-loop-master ~/.hermes/skills/software-development/hermes-loop-master
 ```
 
 Start a fresh Hermes session so skills are reloaded, then ask for it explicitly:
 
 ```text
-Use Hermes Loop Mastering to implement this feature safely.
+Use Hermes Loop Master to implement this feature safely.
 Create LOOP.md, implement one slice, run real verification, update REVIEW.md and HANDOFF.md, then stop.
 ```
 
@@ -150,15 +150,15 @@ From your project root:
 
 ```bash
 mkdir -p .hermes-loop
-cp /path/to/hermes-loop-mastering/templates/LOOP.md .hermes-loop/LOOP.md
-cp /path/to/hermes-loop-mastering/templates/HANDOFF.md .hermes-loop/HANDOFF.md
-cp /path/to/hermes-loop-mastering/templates/REVIEW.md .hermes-loop/REVIEW.md
+cp /path/to/hermes-loop-master/templates/LOOP.md .hermes-loop/LOOP.md
+cp /path/to/hermes-loop-master/templates/HANDOFF.md .hermes-loop/HANDOFF.md
+cp /path/to/hermes-loop-master/templates/REVIEW.md .hermes-loop/REVIEW.md
 ```
 
 Then ask Hermes:
 
 ```text
-Use Hermes Loop Mastering.
+Use Hermes Loop Master.
 Read .hermes-loop/LOOP.md, fill Goal and Done When, implement exactly one next step, run real verification, update REVIEW.md and HANDOFF.md, and stop.
 ```
 
@@ -261,7 +261,7 @@ The loop also caught a real hygiene issue: generated `__pycache__` files had bee
 ### English
 
 ```text
-Use Hermes Loop Mastering for this bug fix.
+Use Hermes Loop Master for this bug fix.
 First write .hermes-loop/LOOP.md with Goal, Done When, Non-goals, Never Touch, and Stop If.
 Add a failing regression test, run it, implement one slice, run verification, write REVIEW.md and HANDOFF.md, then stop.
 ```
@@ -269,7 +269,7 @@ Add a failing regression test, run it, implement one slice, run verification, wr
 ### فارسی
 
 ```text
-با Hermes Loop Mastering این باگ را درست کن.
+با Hermes Loop Master این باگ را درست کن.
 اول .hermes-loop/LOOP.md را با Goal، Done When، Non-goals، Never Touch و Stop If کامل کن.
 بعد یک تست قرمز اضافه کن، اجراش کن، فقط یک slice را fix کن، تست واقعی بگیر، REVIEW.md و HANDOFF.md را کامل کن و متوقف شو.
 ```

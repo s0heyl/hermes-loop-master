@@ -1,6 +1,6 @@
 # Security Policy
 
-Hermes Loop Mastering is a documentation-and-template repository. It should not require secrets or privileged access.
+Hermes Loop Master is a documentation-and-template repository. It should not require secrets or privileged access.
 
 ## Reporting a security issue
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Score Hermes Loop Mastering artifacts in a project directory.
+"""Score Hermes Loop Master artifacts in a project directory.
 
 This is intentionally lightweight: it checks for durable loop files and
 verification evidence. It does not claim to prove code correctness.

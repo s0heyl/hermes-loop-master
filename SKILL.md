@@ -1,8 +1,8 @@
 ---
-name: hermes-loop-mastering
+name: hermes-loop-master
 description: Use when a Hermes Agent coding task is multi-step, risky, long-running, production-facing, security-sensitive, or likely to span multiple sessions. Enforces a spec-first loop, one-slice implementation, real verification evidence, adversarial diff review, context-budget discipline, and clean handoff before work is called done.
 version: 1.0.0
-author: Hermes Loop Mastering contributors
+author: Hermes Loop Master contributors
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
@@ -11,11 +11,11 @@ metadata:
     related_skills: [systematic-debugging, test-driven-development, requesting-code-review, github-pr-workflow]
 ---
 
-# Hermes Loop Mastering
+# Hermes Loop Master
 
 ## Overview
 
-Hermes Loop Mastering is a disciplined operating loop for coding with Hermes Agent. It is built for work where "looks done" is not good enough: production fixes, multi-step features, refactors, security-sensitive changes, and any task that may continue across sessions.
+Hermes Loop Master is a disciplined operating loop for coding with Hermes Agent. It is built for work where "looks done" is not good enough: production fixes, multi-step features, refactors, security-sensitive changes, and any task that may continue across sessions.
 
 The skill changes the agent's behavior in five ways:
 

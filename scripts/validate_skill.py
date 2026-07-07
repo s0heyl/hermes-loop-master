@@ -13,7 +13,7 @@ except Exception as exc:  # pragma: no cover
     sys.exit(2)
 
 REQUIRED_HEADINGS = [
-    "# Hermes Loop Mastering",
+    "# Hermes Loop Master",
     "## Overview",
     "## When to Use",
     "## Verification Checklist",
