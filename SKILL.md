@@ -56,7 +56,7 @@ Classify once during the safety gate, then use the lightest mode that can still 
 
 Budgets are diagnostics, not permission to stop early. Reuse already-read context, batch independent reads/checks, avoid duplicate broad scans, and update artifacts at meaningful checkpoints. If correctness requires more work, continue and record why the budget was exceeded in the Evidence Log.
 
-The machine-readable defaults live in `scripts/artifact_contract.py`. For every Critical task, read `references/behavioral-verification.md` before writing tests. Its exact seven evidence labels and canonical result tokens are part of the contract, not optional prose.
+The machine-readable defaults live in `scripts/artifact_contract.py`. For every Critical task, read `references/behavioral-verification.md` before writing tests and build its security boundary matrix when untrusted input or integrity is involved. Its exact seven evidence labels and canonical result tokens are part of the contract, not optional prose.
 
 ## Core Artifacts
 

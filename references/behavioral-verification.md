@@ -58,6 +58,18 @@ Before a Critical task can be marked complete, the Evidence Log should identify:
 - targeted check followed by the narrowest meaningful broader check;
 - side-effect read-back for writes, deployments, migrations, payments, or remote changes.
 
+## Security boundary classes
+
+For Critical parsers, auth, payment, webhook, and data-integrity paths, build a compact boundary matrix before implementation:
+
+- For every untrusted scalar, test missing, `null`/`None`, boolean, integer, float, string, empty/whitespace string, and container values as applicable. In Python, remember `bool` is a subclass of `int`; require `type(value) is int` when booleans must be rejected.
+- For structured headers/protocol fields, test whitespace, missing fields, malformed separators, repeated values that the protocol permits (for example key rotation), and conflicting values that must be unique.
+- For cryptographic verification, sign exact raw bytes, use constant-time comparison such as `hmac.compare_digest`, and validate both sides of freshness windows.
+- For identifiers, require the documented type and reject empty/whitespace-only values before any side effect.
+- Assert side-effect state is unchanged for every rejection class.
+
+Choose one representative test per equivalence class rather than dozens of cosmetic variants.
+
 ## Anti-overfitting rules
 
 - Do not infer the full contract only from visible tests; inspect types, docs, callers, boundaries, and platform semantics.

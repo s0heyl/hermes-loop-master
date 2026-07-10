@@ -47,6 +47,9 @@ class AdaptivePolicyTests(unittest.TestCase):
             "oracle unavailable:",
             "repeated versioned signatures",
             "canonical result token",
+            "Security boundary classes",
+            "bool` is a subclass of `int",
+            "hmac.compare_digest",
         ]:
             self.assertIn(phrase, reference)
 
