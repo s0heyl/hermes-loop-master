@@ -72,14 +72,21 @@ bash install.sh --dry-run
 bash install.sh
 ```
 
-Use `--target DIR` for an exact install directory. Replacing an existing install requires `--force`; the installer stages and validates the new copy, then keeps a timestamped backup of the old one.
+Use `--target DIR` for an exact install directory. Replacing an existing recognized install requires `--force`; the installer stages and validates the new copy, keeps a timestamped backup, and rolls back on failure.
+
+Windows PowerShell:
+
+```powershell
+.\install.ps1 -DryRun
+.\install.ps1
+```
 
 Then start a fresh Hermes session and ask:
 
 ```text
 Use Hermes Loop Master.
-Create LOOP.md, implement one slice, run real verification,
-write REVIEW.md and HANDOFF.md, then stop.
+Create LOOP.md, keep one slice active at a time, verify and review it,
+then repeat until Done When passes or a real blocker requires a handoff.
 ```
 
 ### Project files
@@ -134,9 +141,9 @@ write REVIEW.md and HANDOFF.md, then stop.
 ```text
 با Hermes Loop Master این تسک را انجام بده.
 اول .hermes-loop/LOOP.md را کامل کن.
-فقط یک slice انجام بده.
-تست واقعی بگیر.
-REVIEW.md و HANDOFF.md را کامل کن و بعد متوقف شو.
+هر بار فقط یک slice فعال داشته باش؛ بعد از تست و Review،
+slice بعدی را تا تکمیل Done When یا رسیدن به blocker واقعی ادامه بده.
+در پایان REVIEW.md و HANDOFF.md را کامل کن.
 ```
 
 ---
@@ -156,18 +163,18 @@ python scripts/harness_check.py --strict --mode critical examples/critical-loop
 Observed result:
 
 ```text
-Unit suite: 21/21 pass
-SKILL.md: valid
-STANDARD: 31/31 (100%)
-CRITICAL: 37/37 (100%, 7/7 behavioral gates)
-BAD: 9/30 (30%), rejected as expected
+Unit suite: 34/34 pass
+SKILL.md: valid without PyYAML
+STANDARD: 35/35 (100%, structured RED/GREEN)
+CRITICAL: 39/39 (100%, 7/7 behavioral gates)
+BAD: 9/34 (26%), rejected as expected
 ```
 
 | Fixture | Result | Meaning |
 |---|---:|---|
-| ✅ `good-loop` | `31/31` | Complete Standard loop: spec, evidence, review, handoff. |
-| ✅ `critical-loop` | `37/37` | Full Critical loop plus seven behavioral evidence gates. |
-| ❌ `bad-loop` | `9/30` | Missing contract, evidence, review checks, and handoff fields. |
+| ✅ `good-loop` | `35/35` | Complete Standard loop with structured RED/GREEN evidence. |
+| ✅ `critical-loop` | `39/39` | Runnable Critical fixture plus seven behavioral evidence gates. |
+| ❌ `bad-loop` | `9/34` | Missing contract, evidence, review checks, and handoff fields. |
 
 ### Real bug-fix smoke test
 
@@ -201,10 +208,12 @@ normalized_coupon = coupon.strip().upper() if isinstance(coupon, str) else coupo
 
 Final evidence:
 
+Historical v1.3 smoke evidence:
+
 ```text
 3 passed in 0.09s
 git diff --check → ok
-harness_check.py . → Score: 27/27 (100%)
+legacy harness → Score: 27/27 (100%)
 ```
 
 Bonus signal: the loop also caught accidentally tracked `__pycache__` files and cleaned them from git.
@@ -217,6 +226,7 @@ Bonus signal: the loop also caught accidentally tracked `__pycache__` files and 
 .
 ├── SKILL.md
 ├── install.sh
+├── install.ps1
 ├── templates/
 │   ├── LOOP.md
 │   ├── REVIEW.md
@@ -224,6 +234,7 @@ Bonus signal: the loop also caught accidentally tracked `__pycache__` files and 
 │   └── FEATURES.json
 ├── scripts/
 │   ├── artifact_contract.py
+│   ├── security_patterns.py
 │   ├── validate_skill.py
 │   ├── harness_check.py
 │   └── compare_benchmarks.py

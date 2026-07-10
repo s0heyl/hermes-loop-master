@@ -27,6 +27,7 @@ class ReleaseAssetTests(unittest.TestCase):
             "bash install.sh --dry-run",
         ]:
             self.assertIn(command, workflow)
+        self.assertIn('tags: ["v*"]', workflow)
 
     def test_installer_dry_run_target_and_force_are_safe(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -63,13 +64,35 @@ class ReleaseAssetTests(unittest.TestCase):
             self.assertIn("--force", second.stderr)
 
             forced = subprocess.run(
-                ["bash", "install.sh", "--target", str(target), "--force"],
+                ["bash", "install.sh", "--target", str(target) + "/", "--force"],
                 cwd=ROOT,
                 text=True,
                 capture_output=True,
                 check=False,
             )
             self.assertEqual(forced.returncode, 0, forced.stdout + forced.stderr)
+
+    def test_force_refuses_unrecognized_target(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            target = pathlib.Path(tmp) / "unrelated"
+            target.mkdir()
+            (target / "keep.txt").write_text("important")
+            result = subprocess.run(
+                ["bash", "install.sh", "--target", str(target), "--force"],
+                cwd=ROOT,
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertNotEqual(result.returncode, 0)
+            self.assertTrue((target / "keep.txt").exists())
+            self.assertIn("not a Hermes Loop Master installation", result.stderr)
+
+    def test_powershell_installer_is_shipped_for_windows_platform(self):
+        script = (ROOT / "install.ps1").read_text()
+        self.assertIn("param(", script)
+        self.assertIn("DryRun", script)
+        self.assertIn("Force", script)
 
 
 if __name__ == "__main__":

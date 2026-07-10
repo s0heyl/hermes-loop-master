@@ -6,11 +6,7 @@ import re
 import sys
 from pathlib import Path
 
-try:
-    import yaml
-except Exception as exc:  # pragma: no cover
-    print(f"ERROR: PyYAML is required: {exc}", file=sys.stderr)
-    sys.exit(2)
+from security_patterns import SECRET_PATTERNS
 
 REQUIRED_HEADINGS = [
     "# Hermes Loop Master",
@@ -23,6 +19,29 @@ REQUIRED_HEADINGS = [
 def fail(message: str) -> None:
     print(f"FAIL: {message}", file=sys.stderr)
     sys.exit(1)
+
+
+def parse_top_level_frontmatter(text: str) -> dict[str, str]:
+    """Parse the scalar top-level keys needed by the validator.
+
+    Agent Skills frontmatter can contain nested YAML, but validation only needs
+    its top-level scalar metadata. Keeping this parser narrow removes an
+    installer-time dependency without pretending to implement all of YAML.
+    """
+    result: dict[str, str] = {}
+    for number, line in enumerate(text.splitlines(), 1):
+        if not line or line[:1].isspace() or line.lstrip().startswith("#"):
+            continue
+        if ":" not in line:
+            raise ValueError(f"malformed top-level line {number}")
+        key, value = line.split(":", 1)
+        key = key.strip()
+        value = value.strip()
+        if not key or key in result:
+            raise ValueError(f"invalid or duplicate top-level key on line {number}")
+        if value:
+            result[key] = value.strip("'\"")
+    return result
 
 
 def main() -> int:
@@ -44,9 +63,9 @@ def main() -> int:
     body = text[match.end() + 4 :]
 
     try:
-        meta = yaml.safe_load(frontmatter)
-    except Exception as exc:
-        fail(f"frontmatter YAML parse error: {exc}")
+        meta = parse_top_level_frontmatter(frontmatter)
+    except ValueError as exc:
+        fail(f"frontmatter parse error: {exc}")
 
     if not isinstance(meta, dict):
         fail("frontmatter must parse to a mapping")
@@ -85,17 +104,14 @@ def main() -> int:
         if needle.lower() in lowered:
             fail(f"forbidden/private pattern found: {needle}")
 
-    secret_patterns = [
-        re.compile(r"\bsk-[A-Za-z0-9_-]{20,}\b"),
-    ]
-    for pattern in secret_patterns:
+    for pattern in SECRET_PATTERNS:
         if pattern.search(text):
             fail(f"possible secret pattern found: {pattern.pattern}")
 
     local_path_patterns = [
         r"/home/[^\s/]+/[^\s]+",
         r"/Users/[^\s/]+/[^\s]+",
-        r"C:\\\\Users\\\\[^\s\\\\]+",
+        r"(?i)\b[A-Z]:[\\/]Users[\\/][^\\/\s]+[\\/][^\s]+",
     ]
     for pattern in local_path_patterns:
         if re.search(pattern, text):

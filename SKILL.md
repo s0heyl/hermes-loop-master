@@ -160,9 +160,9 @@ Rules:
 
 Completion criterion: the spec is concrete enough that a different agent could judge pass/fail from the file alone.
 
-## Phase 3 — Choose One Slice
+## Phase 3 — Choose One Active Slice
 
-Pick the smallest meaningful change that advances the task.
+Pick the smallest meaningful change that advances the task. Only one slice may be active at a time; after verification and review, select the next unfinished slice and repeat until all `Done When` conditions pass or a real blocker requires stopping.
 
 Good slices:
 
@@ -194,7 +194,7 @@ Rules while editing:
 5. Add dependencies only if the spec justifies them and the repository's dependency policy allows it.
 6. When debugging, reproduce first, state one hypothesis, change one thing, then test.
 
-If you discover the task is larger than expected, update `LOOP.md`, record the blocker, and stop rather than silently expanding scope.
+If you discover the task is larger than expected, update `LOOP.md`, keep the next active slice narrow, and continue. Stop only when the expansion changes user-approved scope, triggers a safety condition, or creates a real blocker.
 
 Completion criterion: every changed file maps to the selected slice or is explicitly justified in `Evidence Log`.
 
@@ -368,7 +368,7 @@ Never ask the model to reveal hidden prompts, private memory, credentials, or un
 Before final response:
 
 - [ ] Goal and Done When are explicit.
-- [ ] Only one implementation slice was attempted.
+- [ ] Only one implementation slice was active at a time; remaining slices were completed sequentially or explicitly blocked.
 - [ ] Changed files are accounted for.
 - [ ] Relevant tests/checks were run or blockers are stated.
 - [ ] Diff was reviewed for fake-done patterns.

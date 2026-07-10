@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
-"""Score Hermes Loop Master artifacts in a project directory.
-
-The harness validates the public artifact contract and, for Critical mode,
-requires recorded behavioral evidence. It never executes commands copied from
-artifacts; callers must run real verification separately.
-"""
+"""Score Hermes Loop Master artifacts without executing recorded commands."""
 from __future__ import annotations
 
 import argparse
@@ -20,106 +15,180 @@ from artifact_contract import (
     REQUIRED_LOOP_SECTIONS,
     REQUIRED_REVIEW_CHECKS,
 )
+from security_patterns import SECRET_PATTERNS
 
-SECRET_PATTERNS = [
-    re.compile(r"\bgho_[A-Za-z0-9_]{20,}\b"),
-    re.compile(r"\bsk-[A-Za-z0-9_-]{20,}\b"),
-    re.compile(r"-----BEGIN [A-Z ]*PRIVATE KEY-----"),
-    re.compile(
-        r"(?i)(api[_-]?key|secret|password|token)\s*=\s*['\"]?[^\s'\"]{12,}"
-    ),
+PASS_RESULTS = {"pass", "ok", "success"}
+MODE_RANK = {"tiny": 0, "standard": 1, "critical": 2}
+BEHAVIORAL_GATES = [
+    "Positive path",
+    "Negative path",
+    "Preservation path",
+    "Failure path",
+    "RED evidence",
+    "GREEN evidence",
+    "Independent Oracle",
 ]
-
-BEHAVIORAL_GATES = {
-    "positive path": ("positive path",),
-    "negative path": ("negative path",),
-    "preservation path": ("preservation path",),
-    "failure path": ("failure path",),
-    "RED evidence": ("red evidence", " red ", "red→green", "red -> green"),
-    "GREEN evidence": ("green evidence", " green ", "red→green", "red -> green"),
-    "Independent Oracle": (
-        "independent oracle",
-        "oracle result",
-        "oracle unavailable:",
-    ),
-}
 
 
 def read(path: Path) -> str:
     return path.read_text(encoding="utf-8") if path.exists() else ""
 
 
-def infer_mode(loop: str) -> str:
+def section(text: str, heading: str) -> str:
     match = re.search(
-        r"## Classification\s+[`*]*\s*(tiny|standard|critical)\b",
-        loop,
-        re.I,
+        rf"^{re.escape(heading)}\s*$\n(.*?)(?=^##\s|\Z)", text, re.M | re.S
     )
-    return match.group(1).lower() if match else "standard"
+    return match.group(1) if match else ""
+
+
+def declared_mode(loop: str) -> str | None:
+    match = re.search(
+        r"^## Classification\s*$\n\s*[`*]*\s*(tiny|standard|critical)\b",
+        loop,
+        re.I | re.M,
+    )
+    return match.group(1).lower() if match else None
+
+
+def artifact_contract_version(loop: str) -> str | None:
+    match = re.match(r"^---\s*\n(.*?)\n---\s*\n", loop, re.S)
+    if not match:
+        return None
+    version = re.search(r"^contract_version:\s*['\"]?([^'\"\s]+)", match.group(1), re.M)
+    return version.group(1) if version else None
+
+
+def evidence_rows(loop: str) -> list[dict[str, str]]:
+    rows: list[dict[str, str]] = []
+    for raw in section(loop, "## Evidence Log").splitlines():
+        if not raw.strip().startswith("|"):
+            continue
+        cells = [cell.strip().strip("`") for cell in raw.strip().strip("|").split("|")]
+        if len(cells) != 4 or cells[0].lower() == "time" or set(cells[0]) <= {"-", ":"}:
+            continue
+        rows.append(
+            {"time": cells[0], "check": cells[1], "result": cells[2].lower(), "notes": cells[3]}
+        )
+    return rows
+
+
+def gate_passes(label: str, rows: list[dict[str, str]]) -> bool:
+    needle = label.lower()
+    for row in rows:
+        claim = f"{row['check']} {row['notes']}".lower()
+        if needle not in claim:
+            continue
+        result = row["result"]
+        if label == "RED evidence":
+            if result == "fail":
+                return True
+            continue
+        if label == "Independent Oracle" and "oracle unavailable:" in claim:
+            if result == "skipped" and len(row["notes"].strip()) >= 12:
+                return True
+            continue
+        if result in PASS_RESULTS:
+            return True
+    return False
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("root", nargs="?", default=".")
     parser.add_argument("--mode", choices=sorted(MODE_REQUIREMENTS))
-    parser.add_argument(
-        "--strict",
-        action="store_true",
-        help="fail on any contract or behavioral issue, not only low score",
-    )
+    parser.add_argument("--strict", action="store_true")
     parser.add_argument("--json", action="store_true", dest="as_json")
     return parser.parse_args()
 
 
 def evaluate(root: Path, requested_mode: str | None, strict: bool) -> dict:
     root = root.resolve()
-    loop_dir = root / ".hermes-loop"
-    if not loop_dir.exists():
-        loop_dir = root
-
-    loop = read(loop_dir / "LOOP.md")
-    handoff = read(loop_dir / "HANDOFF.md")
-    review = read(loop_dir / "REVIEW.md")
-    features_path = loop_dir / "FEATURES.json"
-    mode = requested_mode or infer_mode(loop)
-
+    candidate = root / ".hermes-loop"
     issues: list[str] = []
+    if candidate.is_symlink():
+        issues.append(".hermes-loop symlink is not allowed")
+        loop_dir = candidate
+        loop = handoff = review = ""
+    else:
+        loop_dir = candidate if candidate.exists() else root
+        loop = read(loop_dir / "LOOP.md")
+        handoff = read(loop_dir / "HANDOFF.md")
+        review = read(loop_dir / "REVIEW.md")
+
+    declared = declared_mode(loop)
+    mode = requested_mode or declared or "standard"
+    if requested_mode and declared and MODE_RANK[requested_mode] < MODE_RANK[declared]:
+        issues.append(f"cannot downgrade declared {declared} mode to {requested_mode}")
+        mode = declared
+
+    base_result = {
+        "contract_version": CONTRACT_VERSION,
+        "root": str(root),
+        "mode": mode,
+        "strict": strict,
+        "score": 0,
+        "max_score": 0,
+        "ratio": 1.0,
+        "behavioral_gates_passed": 0,
+        "behavioral_gates_required": 0,
+        "issues": issues,
+        "secret_hits": [],
+        "passed": not issues,
+    }
+    if mode == "tiny" and not MODE_REQUIREMENTS["tiny"]["full_artifacts"]:
+        return base_result
+
     score = 0
     max_score = 0
 
+    version = artifact_contract_version(loop)
+    max_score += 1
+    if version == CONTRACT_VERSION:
+        score += 1
+    else:
+        issues.append(
+            f"LOOP.md contract_version must be {CONTRACT_VERSION}; found {version or 'missing'}"
+        )
+
     max_score += len(REQUIRED_LOOP_SECTIONS)
-    for section in REQUIRED_LOOP_SECTIONS:
-        if section in loop:
+    for required in REQUIRED_LOOP_SECTIONS:
+        if required in loop:
             score += 1
         else:
-            issues.append(f"LOOP.md missing section: {section}")
+            issues.append(f"LOOP.md missing section: {required}")
 
-    max_score += 3
-    if re.search(r"## Done When\s+(- \[[xX ]\] .+\n)+", loop):
+    done_lines = re.findall(r"^- \[([ xX])\] .+", section(loop, "## Done When"), re.M)
+    max_score += 1
+    if done_lines and all(mark.lower() == "x" for mark in done_lines):
         score += 1
-    else:
+    elif not done_lines:
         issues.append("LOOP.md Done When has no checkbox conditions")
+    else:
+        issues.append("LOOP.md Done When has unchecked conditions")
 
-    if EVIDENCE_HEADER in loop and re.search(
-        r"\|\s*[^|]+\s*\|\s*`?[^|`]+`?\s*\|\s*(pass|ok|success|fail|blocked|skipped)",
-        loop,
-        re.I,
-    ):
+    rows = evidence_rows(loop)
+    max_score += 2
+    if EVIDENCE_HEADER in loop:
         score += 1
     else:
-        issues.append("LOOP.md Evidence Log has no concrete command/check result")
+        issues.append("LOOP.md Evidence Log header does not match the contract")
+    if rows and any(row["result"] in PASS_RESULTS | {"fail", "blocked", "skipped"} for row in rows):
+        score += 1
+    else:
+        issues.append("LOOP.md Evidence Log has no structured result row")
 
-    if "## Active Slice" in loop and re.search(r"## Active Slice\s+\S", loop):
+    max_score += 1
+    if section(loop, "## Active Slice").strip():
         score += 1
     else:
         issues.append("LOOP.md Active Slice is empty")
 
     max_score += len(REQUIRED_HANDOFF_SECTIONS)
-    for section in REQUIRED_HANDOFF_SECTIONS:
-        if section in handoff:
+    for required in REQUIRED_HANDOFF_SECTIONS:
+        if required in handoff:
             score += 1
         else:
-            issues.append(f"HANDOFF.md missing section: {section}")
+            issues.append(f"HANDOFF.md missing section: {required}")
 
     max_score += len(REQUIRED_REVIEW_CHECKS) + 1
     review_lower = review.lower()
@@ -128,48 +197,55 @@ def evaluate(root: Path, requested_mode: str | None, strict: bool) -> dict:
             score += 1
         else:
             issues.append(f"REVIEW.md unchecked fake-done item: {label}")
-    if "## Verdict" in review and re.search(
-        r"## Verdict\s+(pass|needs-fix|blocked)", review, re.I
-    ):
+    verdict = section(review, "## Verdict").strip().splitlines()
+    if verdict and verdict[0].strip().lower() == "pass":
         score += 1
     else:
-        issues.append("REVIEW.md missing verdict")
+        issues.append("REVIEW.md verdict must be pass")
 
-    if features_path.exists():
+    features_path = loop_dir / "FEATURES.json"
+    if features_path.exists() and not features_path.is_symlink():
         max_score += 1
         try:
             data = json.loads(features_path.read_text(encoding="utf-8"))
-            if isinstance(data, list) and all(
-                "passes" in item for item in data if isinstance(item, dict)
-            ):
+            valid = (
+                isinstance(data, list)
+                and bool(data)
+                and all(
+                    isinstance(item, dict) and isinstance(item.get("passes"), bool)
+                    for item in data
+                )
+            )
+            if valid:
                 score += 1
             else:
-                issues.append("FEATURES.json must be a list with passes fields")
+                issues.append("FEATURES.json must be a non-empty list of objects with boolean passes")
         except Exception as exc:
             issues.append(f"FEATURES.json invalid JSON: {exc}")
 
-    combined = "\n".join([loop, handoff, review]).lower()
-    behavioral_passed = 0
-    behavioral_required = 0
+    required_gates = []
+    if MODE_REQUIREMENTS[mode]["requires_red_green"]:
+        required_gates.extend(["RED evidence", "GREEN evidence"])
     if mode == "critical":
-        behavioral_required = len(BEHAVIORAL_GATES)
-        max_score += behavioral_required
-        for label, needles in BEHAVIORAL_GATES.items():
-            if any(needle.lower() in combined for needle in needles):
-                score += 1
-                behavioral_passed += 1
-            else:
-                issues.append(f"critical evidence missing: {label}")
+        required_gates = BEHAVIORAL_GATES
+    max_score += len(required_gates)
+    behavioral_passed = 0
+    for label in required_gates:
+        if gate_passes(label, rows):
+            score += 1
+            behavioral_passed += 1
+        else:
+            issues.append(f"{mode} evidence missing or invalid: {label}")
 
     max_score += 1
     secret_hits: list[str] = []
-    if loop_dir.exists():
+    if loop_dir.exists() and not loop_dir.is_symlink():
         for path in loop_dir.rglob("*"):
-            if not path.is_file() or path.stat().st_size > 1_000_000:
+            if path.is_symlink() or not path.is_file() or path.stat().st_size > 1_000_000:
                 continue
             try:
                 text = path.read_text(encoding="utf-8")
-            except UnicodeDecodeError:
+            except (UnicodeDecodeError, OSError):
                 continue
             if any(pattern.search(text) for pattern in SECRET_PATTERNS):
                 secret_hits.append(str(path.relative_to(loop_dir)))
@@ -178,21 +254,17 @@ def evaluate(root: Path, requested_mode: str | None, strict: bool) -> dict:
     else:
         score += 1
 
-    ratio = score / max_score if max_score else 0.0
+    ratio = score / max_score if max_score else 1.0
     passed = ratio >= 0.8 and not secret_hits
     if strict and issues:
         passed = False
-
     return {
-        "contract_version": CONTRACT_VERSION,
-        "root": str(root),
-        "mode": mode,
-        "strict": strict,
+        **base_result,
         "score": score,
         "max_score": max_score,
         "ratio": round(ratio, 6),
         "behavioral_gates_passed": behavioral_passed,
-        "behavioral_gates_required": behavioral_required,
+        "behavioral_gates_required": len(required_gates),
         "issues": issues,
         "secret_hits": secret_hits,
         "passed": passed,
@@ -205,10 +277,7 @@ def main() -> int:
     if args.as_json:
         print(json.dumps(result, indent=2, sort_keys=True))
     else:
-        print(
-            f"Score: {result['score']}/{result['max_score']} "
-            f"({result['ratio']:.0%}) mode={result['mode']}"
-        )
+        print(f"Score: {result['score']}/{result['max_score']} ({result['ratio']:.0%}) mode={result['mode']}")
         if result["issues"]:
             print("Issues:")
             for issue in result["issues"]:

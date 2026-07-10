@@ -12,7 +12,10 @@ Adaptive verification and measurable quality upgrade:
 - Fixed secret-scanner false positives for ordinary text such as `task-list`.
 - Added deterministic benchmark comparison tooling with correctness regression gates.
 - Added unit tests and GitHub Actions quality checks.
-- Added atomic installer staging with `--target`, `--dry-run`, `--force`, and backup-on-replace.
+- Added atomic Bash installer staging with `--target`, `--dry-run`, `--force`, recognized-target protection, backup, and rollback.
+- Added a PowerShell installer for Windows.
+- Removed the runtime PyYAML dependency from skill validation.
+- Added a runnable Critical webhook fixture with deterministic oracle vectors.
 
 ## 1.3.0 - 2026-07-07
 

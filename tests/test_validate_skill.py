@@ -34,6 +34,35 @@ class ValidateSkillTests(unittest.TestCase):
         result = self.run_validator(BASE_SKILL + "\nExample prefix: `sk-<redacted>`\n")
         self.assertEqual(result.returncode, 0, result.stderr)
 
+    def test_common_github_and_json_credentials_are_rejected(self):
+        samples = [
+            "ghp_" + "A" * 36,
+            "github_pat_" + "A" * 30,
+            '{"api_key":"' + "B" * 24 + '"}',
+        ]
+        for sample in samples:
+            with self.subTest(sample=sample[:12]):
+                result = self.run_validator(BASE_SKILL + f"\n{sample}\n")
+                self.assertEqual(result.returncode, 1)
+                self.assertIn("possible secret", result.stderr.lower())
+
+    def test_windows_user_path_is_rejected(self):
+        result = self.run_validator(BASE_SKILL + "\nC:\\Users\\Alice\\secret.txt\n")
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("local path", result.stderr.lower())
+
+    def test_validator_runs_without_pyyaml_site_package(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = pathlib.Path(tmp) / "SKILL.md"
+            path.write_text(BASE_SKILL)
+            result = subprocess.run(
+                ["python", "-S", str(VALIDATOR), str(path)],
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+        self.assertEqual(result.returncode, 0, result.stderr)
+
 
 if __name__ == "__main__":
     unittest.main()

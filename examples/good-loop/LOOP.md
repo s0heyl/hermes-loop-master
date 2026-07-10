@@ -1,3 +1,6 @@
+---
+contract_version: 1.0
+---
 # Loop State
 
 ## Goal
@@ -37,7 +40,8 @@ Trim greeting helper input and preserve fallback behavior for blank names.
 ## Evidence Log
 | Time | Command / Check | Result | Notes |
 |---|---|---|---|
-| 2026-01-01T00:00:00Z | `python3 -m pytest tests/test_greeting.py -q` | pass | 3 passed |
+| 2026-01-01T00:00:00Z | RED evidence: `python3 -m pytest tests/test_greeting.py -q` | fail | New whitespace regression failed before implementation. |
+| 2026-01-01T00:00:03Z | GREEN evidence: `python3 -m pytest tests/test_greeting.py -q` | pass | 3 passed after the one-slice fix. |
 | 2026-01-01T00:00:05Z | `git diff --check` | ok | no whitespace errors |
 
 ## Decisions

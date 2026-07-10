@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import sys
 from pathlib import Path
 
@@ -35,17 +36,25 @@ def load_snapshot(path: Path) -> dict:
     for prefix in ("hidden", "visible"):
         passed = data[f"{prefix}_passed"]
         total = data[f"{prefix}_total"]
-        if not isinstance(passed, int) or not isinstance(total, int):
+        if type(passed) is not int or type(total) is not int:
             raise ValueError(f"{prefix} counts must be integers in {path}")
         if total <= 0 or passed < 0 or passed > total:
             raise ValueError(f"invalid {prefix} counts in {path}")
-    if data["elapsed_seconds"] <= 0 or data["tool_calls"] < 0:
+    elapsed = data["elapsed_seconds"]
+    calls = data["tool_calls"]
+    if type(elapsed) not in (int, float) or isinstance(elapsed, bool) or not math.isfinite(elapsed):
+        raise ValueError(f"elapsed_seconds must be a finite number in {path}")
+    if type(calls) is not int or isinstance(calls, bool):
+        raise ValueError(f"tool_calls must be an integer in {path}")
+    if elapsed <= 0 or calls < 0:
         raise ValueError(f"invalid efficiency metrics in {path}")
     return data
 
 
-def percent_delta(before: float, after: float) -> float:
-    return round((after / before - 1.0) * 100.0, 3) if before else 0.0
+def percent_delta(before: float, after: float) -> float | None:
+    if before == 0:
+        return 0.0 if after == 0 else None
+    return round((after / before - 1.0) * 100.0, 3)
 
 
 def compare(baseline: dict, candidate: dict) -> dict:
@@ -53,7 +62,14 @@ def compare(baseline: dict, candidate: dict) -> dict:
     cand_hidden = candidate["hidden_passed"] / candidate["hidden_total"]
     base_visible = baseline["visible_passed"] / baseline["visible_total"]
     cand_visible = candidate["visible_passed"] / candidate["visible_total"]
-    quality_gate = cand_hidden >= base_hidden and cand_visible >= base_visible
+    corpus_gate = (
+        candidate["hidden_total"] >= baseline["hidden_total"]
+        and candidate["visible_total"] >= baseline["visible_total"]
+    )
+    quality_gate = corpus_gate and cand_hidden >= base_hidden and cand_visible >= base_visible
+    tool_delta = percent_delta(
+        float(baseline["tool_calls"]), float(candidate["tool_calls"])
+    )
     return {
         "baseline": baseline["name"],
         "candidate": candidate["name"],
@@ -66,15 +82,21 @@ def compare(baseline: dict, candidate: dict) -> dict:
         "elapsed_delta_percent": percent_delta(
             float(baseline["elapsed_seconds"]), float(candidate["elapsed_seconds"])
         ),
-        "tool_call_delta_percent": percent_delta(
-            float(baseline["tool_calls"]), float(candidate["tool_calls"])
-        ),
+        "tool_call_delta_percent": tool_delta,
+        "tool_call_delta_absolute": candidate["tool_calls"] - baseline["tool_calls"],
+        "corpus_gate_passed": corpus_gate,
         "quality_gate_passed": quality_gate,
     }
 
 
 def markdown(result: dict) -> str:
     status = "PASS" if result["quality_gate_passed"] else "FAIL"
+    tool_delta = result["tool_call_delta_percent"]
+    tool_text = (
+        f"{tool_delta:+.3f}%"
+        if tool_delta is not None
+        else f"undefined ({result['tool_call_delta_absolute']:+d} absolute)"
+    )
     return "\n".join(
         [
             f"# Benchmark comparison: {result['baseline']} → {result['candidate']}",
@@ -84,7 +106,7 @@ def markdown(result: dict) -> str:
             f"| Hidden accuracy | {result['hidden_accuracy_delta_points']:+.3f} points |",
             f"| Visible accuracy | {result['visible_accuracy_delta_points']:+.3f} points |",
             f"| Elapsed time | {result['elapsed_delta_percent']:+.3f}% |",
-            f"| Tool calls | {result['tool_call_delta_percent']:+.3f}% |",
+            f"| Tool calls | {tool_text} |",
             "",
             f"Quality gate: **{status}**",
         ]

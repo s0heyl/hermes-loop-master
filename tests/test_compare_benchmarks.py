@@ -45,6 +45,30 @@ class BenchmarkComparisonTests(unittest.TestCase):
         self.assertEqual(result.returncode, 2)
         self.assertIn("missing required keys", result.stderr)
 
+    def test_shrinking_benchmark_corpus_fails_quality_gate(self):
+        baseline = {"name": "base", "hidden_passed": 90, "hidden_total": 100, "visible_passed": 90, "visible_total": 100, "elapsed_seconds": 10, "tool_calls": 10}
+        candidate = {"name": "candidate", "hidden_passed": 1, "hidden_total": 1, "visible_passed": 1, "visible_total": 1, "elapsed_seconds": 5, "tool_calls": 5}
+        result = self.run_compare(baseline, candidate, "--json")
+        self.assertEqual(result.returncode, 1)
+        self.assertFalse(json.loads(result.stdout)["corpus_gate_passed"])
+
+    def test_invalid_metric_types_return_exit_two_without_traceback(self):
+        good = {"name": "good", "hidden_passed": 1, "hidden_total": 1, "visible_passed": 1, "visible_total": 1, "elapsed_seconds": 10, "tool_calls": 1}
+        for key, value in [("elapsed_seconds", "10"), ("tool_calls", True), ("hidden_passed", True)]:
+            with self.subTest(key=key):
+                bad = dict(good); bad[key] = value
+                result = self.run_compare(good, bad, "--json")
+                self.assertEqual(result.returncode, 2)
+                self.assertNotIn("Traceback", result.stderr)
+
+    def test_zero_tool_call_baseline_reports_absolute_growth(self):
+        baseline = {"name": "base", "hidden_passed": 1, "hidden_total": 1, "visible_passed": 1, "visible_total": 1, "elapsed_seconds": 10, "tool_calls": 0}
+        candidate = {"name": "candidate", "hidden_passed": 1, "hidden_total": 1, "visible_passed": 1, "visible_total": 1, "elapsed_seconds": 10, "tool_calls": 5}
+        result = self.run_compare(baseline, candidate, "--json")
+        data = json.loads(result.stdout)
+        self.assertIsNone(data["tool_call_delta_percent"])
+        self.assertEqual(data["tool_call_delta_absolute"], 5)
+
 
 if __name__ == "__main__":
     unittest.main()

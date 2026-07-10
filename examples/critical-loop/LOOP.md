@@ -36,11 +36,11 @@ Verify signature parsing and replay boundaries against independent vectors.
 ## Evidence Log
 | Time | Command / Check | Result | Notes |
 |---|---|---|---|
-| T0 | RED evidence: `python -m unittest tests.test_webhook_forgery` | fail | Negative path reproduced forged request acceptance. |
-| T1 | GREEN evidence: `python -m unittest tests.test_webhook_forgery` | pass | Negative path and Failure path now reject without mutation. |
-| T2 | Positive path and Preservation path: `python -m unittest tests.test_webhook_valid` | pass | Valid and duplicate deliveries retain contract. |
-| T3 | Independent Oracle: provider public signature vectors | pass | Oracle result matches local verification. |
-| T4 | `python -m unittest discover -s tests -v` | pass | Full related suite passes. |
+| T0 | RED evidence: `python examples/critical-loop/project/replay_red.py` | fail | Replayable vulnerable parser rejects a valid multi-signature delivery. |
+| T1 | GREEN evidence and Negative path: `python -m unittest discover -s examples/critical-loop/project/tests -v` | pass | Forged and malformed deliveries reject without mutation. |
+| T2 | Positive path and Preservation path: `python -m unittest discover -s examples/critical-loop/project/tests -v` | pass | Valid, boundary, and multi-signature deliveries retain contract. |
+| T3 | Independent Oracle: `test_independent_oracle_vector` in the fixture suite | pass | Published deterministic HMAC vector matches local verification. |
+| T4 | Failure path: `python -m unittest discover -s examples/critical-loop/project/tests -v` | pass | Five runnable fixture tests pass. |
 
 ## Decisions
 | Decision | Reason | Date |
