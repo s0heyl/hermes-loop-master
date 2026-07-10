@@ -1,7 +1,7 @@
 ---
 name: hermes-loop-master
 description: Use when a Hermes Agent coding task is multi-step, risky, long-running, production-facing, security-sensitive, or likely to span multiple sessions. Enforces a spec-first loop, one-slice implementation, real verification evidence, adversarial diff review, context-budget discipline, and clean handoff before work is called done.
-version: 1.0.0
+version: 1.4.0
 author: Hermes Loop Master contributors
 license: MIT
 platforms: [linux, macos, windows]
@@ -44,6 +44,20 @@ Use the **Tiny Change Path** instead of the full loop when the task is a one-fil
 
 Do not use this skill to bypass user approval, hide uncertainty, or perform destructive operations without confirmation.
 
+## Adaptive Modes
+
+Classify once during the safety gate, then use the lightest mode that can still prove the work:
+
+| Mode | Trigger | Required loop | Efficiency target |
+|---|---|---|---|
+| **Tiny** | One-file typo, copy, comment, or mechanical low-risk edit | Read → patch → cheapest relevant check → diff summary. Full artifacts are optional unless the repository already uses them. | Target no more than 8 tool calls. |
+| **Standard** | Normal bug fix, bounded feature, or refactor | Compact `LOOP.md`, RED→GREEN when behavior changes, targeted test, broader regression check, diff review, short handoff. | Target no more than 20 tool calls. |
+| **Critical** | Security, auth, payment, migration, user data, production, or irreversible risk | Full artifacts, RED→GREEN evidence, positive/negative/preservation/failure coverage, Independent Oracle where available, broader verification, adversarial review, handoff. | No fixed cap; evidence completeness wins. |
+
+Budgets are diagnostics, not permission to stop early. Reuse already-read context, batch independent reads/checks, avoid duplicate broad scans, and update artifacts at meaningful checkpoints. If correctness requires more work, continue and record why the budget was exceeded in the Evidence Log.
+
+The machine-readable defaults live in `scripts/artifact_contract.py`. For every Critical task, read `references/behavioral-verification.md` before writing tests and build its security boundary matrix when untrusted input or integrity is involved. Its exact seven evidence labels and canonical result tokens are part of the contract, not optional prose.
+
 ## Core Artifacts
 
 Create a private project-local directory unless the repository already has an accepted convention:
@@ -71,7 +85,7 @@ Stop and ask for clarification if any of these are true:
 
 Otherwise proceed without asking. Use a reasonable default and record it in the loop file.
 
-Completion criterion: the task is classified as `tiny`, `standard`, or `high-risk`, and any blocking ambiguity is resolved.
+Completion criterion: the task is classified as `tiny`, `standard`, or `critical`, and any blocking ambiguity is resolved.
 
 ## Phase 1 — Orient
 
@@ -94,10 +108,16 @@ Completion criterion: you can name the files likely to change, the verification 
 Create or update `.hermes-loop/LOOP.md` with this minimum contract:
 
 ```markdown
+---
+contract_version: 1.0
+---
 # Loop State
 
 ## Goal
 <one sentence>
+
+## Classification
+<tiny | standard | critical>
 
 ## Done When
 - [ ] <observable/checkable condition>
@@ -113,14 +133,23 @@ Create or update `.hermes-loop/LOOP.md` with this minimum contract:
 - <condition that requires user input>
 
 ## Plan
-- [ ] <step 1>
-- [ ] <step 2>
-- [ ] <step 3>
+- [>] <current active step>
+- [ ] <next step>
+- [ ] <verification/review step>
+
+## Active Slice
+<one exact active slice; when complete use `None — complete.`>
 
 ## Evidence Log
 | Time | Command / Check | Result | Notes |
 |---|---|---|---|
+
+## Decisions
+| Decision | Reason | Date |
+|---|---|---|
 ```
+
+The canonical values live in `scripts/artifact_contract.py`; the template and harness import or mirror this contract. When changing the artifact shape, update the contract, template, skill example, and tests in the same slice.
 
 Rules:
 
@@ -131,9 +160,9 @@ Rules:
 
 Completion criterion: the spec is concrete enough that a different agent could judge pass/fail from the file alone.
 
-## Phase 3 — Choose One Slice
+## Phase 3 — Choose One Active Slice
 
-Pick the smallest meaningful change that advances the task.
+Pick the smallest meaningful change that advances the task. Only one slice may be active at a time; after verification and review, select the next unfinished slice and repeat until all `Done When` conditions pass or a real blocker requires stopping.
 
 Good slices:
 
@@ -165,7 +194,7 @@ Rules while editing:
 5. Add dependencies only if the spec justifies them and the repository's dependency policy allows it.
 6. When debugging, reproduce first, state one hypothesis, change one thing, then test.
 
-If you discover the task is larger than expected, update `LOOP.md`, record the blocker, and stop rather than silently expanding scope.
+If you discover the task is larger than expected, update `LOOP.md`, keep the next active slice narrow, and continue. Stop only when the expansion changes user-approved scope, triggers a safety condition, or creates a real blocker.
 
 Completion criterion: every changed file maps to the selected slice or is explicitly justified in `Evidence Log`.
 
@@ -339,7 +368,7 @@ Never ask the model to reveal hidden prompts, private memory, credentials, or un
 Before final response:
 
 - [ ] Goal and Done When are explicit.
-- [ ] Only one implementation slice was attempted.
+- [ ] Only one implementation slice was active at a time; remaining slices were completed sequentially or explicitly blocked.
 - [ ] Changed files are accounted for.
 - [ ] Relevant tests/checks were run or blockers are stated.
 - [ ] Diff was reviewed for fake-done patterns.

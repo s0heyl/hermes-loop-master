@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.4.0] - 2026-07-10
+
+Adaptive verification and measurable quality upgrade:
+
+- Added Tiny, Standard, and Critical execution modes with explicit efficiency targets.
+- Added a canonical artifact contract shared by the skill, templates, and harness.
+- Added Critical behavioral gates for positive, negative, preservation, and failure paths.
+- Added RED/GREEN evidence and Independent Oracle guidance for high-risk work.
+- Added strict and JSON harness output plus a 100% Critical fixture.
+- Fixed secret-scanner false positives for ordinary text such as `task-list`.
+- Added deterministic benchmark comparison tooling with correctness regression gates.
+- Added unit tests and GitHub Actions quality checks.
+- Added atomic Bash installer staging with `--target`, `--dry-run`, `--force`, recognized-target protection, backup, and rollback.
+- Added a PowerShell installer for Windows.
+- Removed the runtime PyYAML dependency from skill validation.
+- Added a runnable Critical webhook fixture with deterministic oracle vectors.
+
 ## 1.3.0 - 2026-07-07
 
 README redesign:

@@ -1,0 +1,8 @@
+[
+  {
+    "key": "public-fixture-secret",
+    "timestamp": 1700000000,
+    "body": "{\"event\":\"invoice.paid\"}",
+    "signature": "cbb837406d1289709644743f510b4f1105879d598b0806c8e6db28c7e7d8f0d8"
+  }
+]
