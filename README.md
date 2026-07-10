@@ -163,7 +163,7 @@ python scripts/harness_check.py --strict --mode critical examples/critical-loop
 Observed result:
 
 ```text
-Unit suite: 34/34 pass
+Unit suite: 36/36 pass
 SKILL.md: valid without PyYAML
 STANDARD: 35/35 (100%, structured RED/GREEN)
 CRITICAL: 39/39 (100%, 7/7 behavioral gates)

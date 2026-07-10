@@ -16,8 +16,15 @@ if ($LASTEXITCODE -ne 0) { throw "SKILL.md validation failed" }
 
 function Test-RecognizedInstall([string]$Path) {
     $Skill = Join-Path $Path "SKILL.md"
-    if (-not (Test-Path $Skill -PathType Leaf)) { return $false }
-    return [bool](Select-String -Path $Skill -Pattern '^name:\s*hermes-loop-master\s*$' -Quiet)
+    if (-not (Test-Path $Path -PathType Container) -or -not (Test-Path $Skill -PathType Leaf)) { return $false }
+    foreach ($Directory in @("templates", "scripts", "examples", "references")) {
+        if (-not (Test-Path (Join-Path $Path $Directory) -PathType Container)) { return $false }
+    }
+    $Lines = Get-Content $Skill
+    if ($Lines.Count -lt 3 -or $Lines[0] -ne "---") { return $false }
+    $Closing = [Array]::IndexOf($Lines, "---", 1)
+    if ($Closing -lt 2) { return $false }
+    return [bool]($Lines[1..($Closing - 1)] -match '^name:\s*hermes-loop-master\s*$')
 }
 
 $Exists = Test-Path $Target

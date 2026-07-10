@@ -45,8 +45,16 @@ done
 python3 "$ROOT/scripts/validate_skill.py" "$ROOT/SKILL.md" >/dev/null
 
 recognized_install() {
-  [[ -d "$1" && ! -L "$1" && -f "$1/SKILL.md" ]] || return 1
-  grep -Eq '^name:[[:space:]]*hermes-loop-master[[:space:]]*$' "$1/SKILL.md"
+  [[ -d "$1" && ! -L "$1" && -f "$1/SKILL.md" && ! -L "$1/SKILL.md" ]] || return 1
+  for directory in templates scripts examples references; do
+    [[ -d "$1/$directory" && ! -L "$1/$directory" ]] || return 1
+  done
+  awk '
+    NR == 1 && $0 == "---" { in_frontmatter=1; next }
+    in_frontmatter && $0 == "---" { exit(found ? 0 : 1) }
+    in_frontmatter && $0 ~ /^name:[[:space:]]*hermes-loop-master[[:space:]]*$/ { found=1 }
+    END { if (!found) exit 1 }
+  ' "$1/SKILL.md"
 }
 
 if [[ -e "$DEST" || -L "$DEST" ]]; then

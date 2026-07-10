@@ -102,6 +102,30 @@ class HarnessCliTests(unittest.TestCase):
             self.assertEqual(result.returncode, 1)
             self.assertTrue(any("symlink" in issue for issue in json.loads(result.stdout)["issues"]))
 
+    def test_invalid_classification_does_not_fall_back_to_standard(self):
+        import shutil
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            target = pathlib.Path(tmp) / "loop"
+            shutil.copytree(ROOT / "examples" / "good-loop", target)
+            path = target / "LOOP.md"
+            path.write_text(path.read_text().replace("## Classification\nstandard", "## Classification\ncritcal"))
+            result = self.run_harness("--json", "--strict", target)
+            self.assertEqual(result.returncode, 1)
+            self.assertTrue(any("invalid Classification" in issue for issue in json.loads(result.stdout)["issues"]))
+
+    def test_completed_loop_cannot_claim_active_slice(self):
+        import shutil
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            target = pathlib.Path(tmp) / "loop"
+            shutil.copytree(ROOT / "examples" / "good-loop", target)
+            path = target / "LOOP.md"
+            path.write_text(path.read_text().replace("None — complete.", "- Slice A active\n- Slice B active"))
+            result = self.run_harness("--json", "--strict", target)
+            self.assertEqual(result.returncode, 1)
+            self.assertTrue(any("completed loop" in issue for issue in json.loads(result.stdout)["issues"]))
+
 
 if __name__ == "__main__":
     unittest.main()

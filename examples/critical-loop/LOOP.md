@@ -31,7 +31,7 @@ critical
 - [x] Review and hand off.
 
 ## Active Slice
-Verify signature parsing and replay boundaries against independent vectors.
+None — complete.
 
 ## Evidence Log
 | Time | Command / Check | Result | Notes |

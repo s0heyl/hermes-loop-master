@@ -27,14 +27,15 @@ standard
 - <!-- Condition requiring user input or approval -->
 
 ## Plan
-- [ ] Orient: read relevant files and identify verification commands
+- [>] Orient: read relevant files and identify verification commands
 - [ ] Implement one smallest meaningful slice
 - [ ] Run targeted verification
 - [ ] Review diff adversarially
 - [ ] Update handoff
 
 ## Active Slice
-<!-- What exact slice is currently being implemented? -->
+Orient: read relevant files and identify verification commands.
+<!-- On completion use exactly: None — complete. -->
 
 ## Evidence Log
 | Time | Command / Check | Result | Notes |

@@ -133,12 +133,12 @@ contract_version: 1.0
 - <condition that requires user input>
 
 ## Plan
-- [ ] <step 1>
-- [ ] <step 2>
-- [ ] <step 3>
+- [>] <current active step>
+- [ ] <next step>
+- [ ] <verification/review step>
 
 ## Active Slice
-<the one exact slice currently being implemented>
+<one exact active slice; when complete use `None — complete.`>
 
 ## Evidence Log
 | Time | Command / Check | Result | Notes |

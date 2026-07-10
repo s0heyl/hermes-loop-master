@@ -77,6 +77,7 @@ class ReleaseAssetTests(unittest.TestCase):
             target = pathlib.Path(tmp) / "unrelated"
             target.mkdir()
             (target / "keep.txt").write_text("important")
+            (target / "SKILL.md").write_text("notes:\nname: hermes-loop-master\n")
             result = subprocess.run(
                 ["bash", "install.sh", "--target", str(target), "--force"],
                 cwd=ROOT,

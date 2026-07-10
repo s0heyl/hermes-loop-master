@@ -35,7 +35,7 @@ standard
 - [x] Update handoff
 
 ## Active Slice
-Trim greeting helper input and preserve fallback behavior for blank names.
+None — complete.
 
 ## Evidence Log
 | Time | Command / Check | Result | Notes |

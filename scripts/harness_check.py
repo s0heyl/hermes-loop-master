@@ -41,13 +41,17 @@ def section(text: str, heading: str) -> str:
     return match.group(1) if match else ""
 
 
+def classification_value(loop: str) -> str | None:
+    body = section(loop, "## Classification").strip()
+    if not body:
+        return None
+    first = body.splitlines()[0].strip().strip("`*").strip().lower()
+    return first
+
+
 def declared_mode(loop: str) -> str | None:
-    match = re.search(
-        r"^## Classification\s*$\n\s*[`*]*\s*(tiny|standard|critical)\b",
-        loop,
-        re.I | re.M,
-    )
-    return match.group(1).lower() if match else None
+    value = classification_value(loop)
+    return value if value in MODE_RANK else None
 
 
 def artifact_contract_version(loop: str) -> str | None:
@@ -115,7 +119,10 @@ def evaluate(root: Path, requested_mode: str | None, strict: bool) -> dict:
         handoff = read(loop_dir / "HANDOFF.md")
         review = read(loop_dir / "REVIEW.md")
 
+    raw_classification = classification_value(loop)
     declared = declared_mode(loop)
+    if raw_classification is not None and declared is None:
+        issues.append(f"invalid Classification value: {raw_classification}")
     mode = requested_mode or declared or "standard"
     if requested_mode and declared and MODE_RANK[requested_mode] < MODE_RANK[declared]:
         issues.append(f"cannot downgrade declared {declared} mode to {requested_mode}")
@@ -158,8 +165,9 @@ def evaluate(root: Path, requested_mode: str | None, strict: bool) -> dict:
             issues.append(f"LOOP.md missing section: {required}")
 
     done_lines = re.findall(r"^- \[([ xX])\] .+", section(loop, "## Done When"), re.M)
+    done_complete = bool(done_lines) and all(mark.lower() == "x" for mark in done_lines)
     max_score += 1
-    if done_lines and all(mark.lower() == "x" for mark in done_lines):
+    if done_complete:
         score += 1
     elif not done_lines:
         issues.append("LOOP.md Done When has no checkbox conditions")
@@ -178,10 +186,20 @@ def evaluate(root: Path, requested_mode: str | None, strict: bool) -> dict:
         issues.append("LOOP.md Evidence Log has no structured result row")
 
     max_score += 1
-    if section(loop, "## Active Slice").strip():
+    active_text = section(loop, "## Active Slice").strip()
+    plan_text = section(loop, "## Plan")
+    active_plan_items = re.findall(r"^- \[>\] .+", plan_text, re.M)
+    open_plan_items = re.findall(r"^- \[ \] .+", plan_text, re.M)
+    completed_marker = active_text.lower().rstrip(".") in {"none — complete", "none - complete"}
+    if done_complete:
+        if not active_plan_items and not open_plan_items and completed_marker:
+            score += 1
+        else:
+            issues.append("completed loop must have no active/open Plan items and Active Slice 'None — complete.'")
+    elif len(active_plan_items) == 1 and active_text and not completed_marker:
         score += 1
     else:
-        issues.append("LOOP.md Active Slice is empty")
+        issues.append("incomplete loop must have exactly one [>] Plan item and one Active Slice")
 
     max_score += len(REQUIRED_HANDOFF_SECTIONS)
     for required in REQUIRED_HANDOFF_SECTIONS:
