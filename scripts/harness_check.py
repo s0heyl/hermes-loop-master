@@ -70,8 +70,12 @@ def evidence_rows(loop: str) -> list[dict[str, str]]:
         cells = [cell.strip().strip("`") for cell in raw.strip().strip("|").split("|")]
         if len(cells) != 4 or cells[0].lower() == "time" or set(cells[0]) <= {"-", ":"}:
             continue
+        result_text = cells[2].lower()
+        token_match = re.match(r"(pass|ok|success|fail|blocked|skipped|red|green)\b", result_text)
+        result = token_match.group(1) if token_match else result_text
+        result = {"red": "fail", "green": "pass"}.get(result, result)
         rows.append(
-            {"time": cells[0], "check": cells[1], "result": cells[2].lower(), "notes": cells[3]}
+            {"time": cells[0], "check": cells[1], "result": result, "notes": cells[3]}
         )
     return rows
 

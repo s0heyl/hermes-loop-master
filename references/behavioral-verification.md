@@ -13,6 +13,20 @@ Artifact completeness proves process discipline; it does not prove that the code
 
 For behavior changes, record both **RED evidence** (the new regression fails for the expected reason before implementation) and **GREEN evidence** (the same check passes after the implementation). A test written after the code without observed RED evidence is useful regression coverage but is not TDD evidence.
 
+For machine-checkable Critical evidence, put each exact label in the `Command / Check` cell and use a canonical result token (`pass`, `fail`, `ok`, `success`, `blocked`, or `skipped`):
+
+```markdown
+| T1 | RED evidence: `<same focused command>` | fail | Expected pre-fix failure. |
+| T2 | GREEN evidence: `<same focused command>` | pass | Same check after fix. |
+| T3 | Positive path: `<command>` | pass | Valid input works. |
+| T4 | Negative path: `<command>` | pass | Unsafe input is denied. |
+| T5 | Preservation path: `<command>` | pass | Valid edge behavior remains. |
+| T6 | Failure path: `<command>` | pass | Malformed input fails safely. |
+| T7 | Independent Oracle: `<authoritative check>` | pass | Oracle agrees. |
+```
+
+Do not replace these labels with synonyms or hide them only in prose; run the strict harness when it is available.
+
 ## Independent Oracle
 
 An Independent Oracle is a second implementation or authoritative runtime that can contradict the code under test. It should not reuse the same helper or assumptions as the implementation.
@@ -23,7 +37,7 @@ An Independent Oracle is a second implementation or authoritative runtime that c
 | API | OpenAPI/JSON Schema validator, contract test, real local request |
 | Database/migration | disposable real database, constraint violation, forward/rollback dry run |
 | Auth/authorization | positive owner case plus unauthenticated and cross-owner negative cases |
-| Payment/webhook | provider sandbox vectors, signature fixture, idempotency/replay checks |
+| Payment/webhook | provider sandbox vectors, signature fixture, idempotency/replay checks; preserve documented key-rotation semantics such as repeated versioned signatures (accept when any supported signature matches), while rejecting conflicting timestamps and malformed fields |
 | Filesystem/archive | isolated temp directory, path traversal corpus, checksum/read-back |
 | CLI | invoke the real command and inspect exit code/stdout/stderr |
 | Cron/automation | execute the exact scheduled script once and verify call count/output files |

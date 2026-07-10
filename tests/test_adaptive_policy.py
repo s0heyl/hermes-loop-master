@@ -37,13 +37,16 @@ class AdaptivePolicyTests(unittest.TestCase):
     def test_behavioral_reference_defines_verification_matrix(self):
         reference = (ROOT / "references" / "behavioral-verification.md").read_text()
         for phrase in [
-            "Independent Oracle",
             "Positive path",
             "Negative path",
             "Preservation path",
             "Failure path",
             "RED evidence",
             "GREEN evidence",
+            "Independent Oracle",
+            "oracle unavailable:",
+            "repeated versioned signatures",
+            "canonical result token",
         ]:
             self.assertIn(phrase, reference)
 
