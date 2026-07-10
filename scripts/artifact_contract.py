@@ -8,6 +8,27 @@ from __future__ import annotations
 
 CONTRACT_VERSION = "1.0"
 
+MODE_REQUIREMENTS = {
+    "tiny": {
+        "full_artifacts": False,
+        "target_tool_calls": 8,
+        "requires_oracle": False,
+        "requires_red_green": False,
+    },
+    "standard": {
+        "full_artifacts": True,
+        "target_tool_calls": 20,
+        "requires_oracle": False,
+        "requires_red_green": True,
+    },
+    "critical": {
+        "full_artifacts": True,
+        "target_tool_calls": None,
+        "requires_oracle": True,
+        "requires_red_green": True,
+    },
+}
+
 REQUIRED_LOOP_SECTIONS = [
     "## Goal",
     "## Classification",

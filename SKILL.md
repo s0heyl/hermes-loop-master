@@ -44,6 +44,20 @@ Use the **Tiny Change Path** instead of the full loop when the task is a one-fil
 
 Do not use this skill to bypass user approval, hide uncertainty, or perform destructive operations without confirmation.
 
+## Adaptive Modes
+
+Classify once during the safety gate, then use the lightest mode that can still prove the work:
+
+| Mode | Trigger | Required loop | Efficiency target |
+|---|---|---|---|
+| **Tiny** | One-file typo, copy, comment, or mechanical low-risk edit | Read → patch → cheapest relevant check → diff summary. Full artifacts are optional unless the repository already uses them. | Target no more than 8 tool calls. |
+| **Standard** | Normal bug fix, bounded feature, or refactor | Compact `LOOP.md`, RED→GREEN when behavior changes, targeted test, broader regression check, diff review, short handoff. | Target no more than 20 tool calls. |
+| **Critical** | Security, auth, payment, migration, user data, production, or irreversible risk | Full artifacts, RED→GREEN evidence, positive/negative/preservation/failure coverage, Independent Oracle where available, broader verification, adversarial review, handoff. | No fixed cap; evidence completeness wins. |
+
+Budgets are diagnostics, not permission to stop early. Reuse already-read context, batch independent reads/checks, avoid duplicate broad scans, and update artifacts at meaningful checkpoints. If correctness requires more work, continue and record why the budget was exceeded in the Evidence Log.
+
+The machine-readable defaults live in `scripts/artifact_contract.py`. Detailed behavioral gates and domain oracles live in `references/behavioral-verification.md`.
+
 ## Core Artifacts
 
 Create a private project-local directory unless the repository already has an accepted convention:
@@ -71,7 +85,7 @@ Stop and ask for clarification if any of these are true:
 
 Otherwise proceed without asking. Use a reasonable default and record it in the loop file.
 
-Completion criterion: the task is classified as `tiny`, `standard`, or `high-risk`, and any blocking ambiguity is resolved.
+Completion criterion: the task is classified as `tiny`, `standard`, or `critical`, and any blocking ambiguity is resolved.
 
 ## Phase 1 — Orient
 

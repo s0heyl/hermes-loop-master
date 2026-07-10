@@ -7,7 +7,7 @@ contract_version: 1.0
 <!-- One sentence: what should be true after this task? -->
 
 ## Classification
-<!-- tiny | standard | high-risk -->
+<!-- tiny | standard | critical -->
 standard
 
 ## Done When
