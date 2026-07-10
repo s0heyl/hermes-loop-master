@@ -1,7 +1,7 @@
 ---
 name: hermes-loop-master
 description: Use when a Hermes Agent coding task is multi-step, risky, long-running, production-facing, security-sensitive, or likely to span multiple sessions. Enforces a spec-first loop, one-slice implementation, real verification evidence, adversarial diff review, context-budget discipline, and clean handoff before work is called done.
-version: 1.0.0
+version: 1.4.0
 author: Hermes Loop Master contributors
 license: MIT
 platforms: [linux, macos, windows]
